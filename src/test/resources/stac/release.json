@@ -1,0 +1,9 @@
+{
+  "stac_version": "1.0.0",
+  "type": "Catalog",
+  "id": "2026-10-21.0",
+  "description": "Fixture release",
+  "links": [
+    {"rel": "child", "href": "https://example.test/2026-10-21.0/theme=transportation/catalog.json", "title": "transportation"}
+  ]
+}

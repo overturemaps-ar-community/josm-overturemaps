@@ -1,0 +1,9 @@
+{
+  "stac_version": "1.0.0",
+  "type": "Catalog",
+  "id": "transportation",
+  "description": "Fixture theme",
+  "links": [
+    {"rel": "child", "href": "https://example.test/2026-10-21.0/theme=transportation/type=segment/collection.json", "title": "segment"}
+  ]
+}

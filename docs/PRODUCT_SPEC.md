@@ -37,6 +37,6 @@ Enable JOSM users to discover and visually compare Overture Maps reference data 
 
 No OSM data edits, automatic upload, conflation, routing validation, Overture-to-OSM conversion, credential management, general-purpose STAC server, or new GeoParquet reader.
 
-## 6. Prototype status
+## 6. Current implementation status
 
-The initial mock dialog has editable release/theme/type, manual bbox, maxDocs and copyable URLs. Dynamic selectors, viewport extraction, cancel/progress, provider preference, and cross-plugin load action are planned but not implemented.
+The dialog dynamically loads release/theme/type options from catalog `child` links, defaults to the latest discovered release, and retains manual bbox, maxDocs and copyable URLs. Cancellation and indeterminate progress feedback are implemented. Viewport extraction, provider preference/deduplication, detailed progress and the cross-plugin load action remain planned.

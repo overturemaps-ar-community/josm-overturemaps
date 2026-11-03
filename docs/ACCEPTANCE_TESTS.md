@@ -33,3 +33,13 @@
 - Antimeridian, no map view, and no GeoParquet plugin installed.
 - Multi-Item matching for wide BBOX and correct filtering by current viewport.
 - No write/upload action to OSM.
+
+## M1 progress (2026-11-03)
+
+- PASS: release, theme and type `child` links are loaded dynamically off the EDT and cached for the dialog session.
+- PASS: the live catalog returned 3 releases; the latest discovered release was `2026-10-21.0 Overture Release`, with themes `addresses`, `base`, `buildings`, `divisions`, `places`, `transportation`; transportation exposed `connector` and `segment`.
+- PASS: fixture discovery reports complete and incomplete traversal correctly, accepts nested extension objects through the compatibility copy, and filters non-HTTPS Parquet assets.
+- PASS: metadata URLs require HTTPS; HTTP requests have connect/request timeouts, three bounded attempts and a 5 MiB document limit.
+- PASS: the dialog exposes cancellation and indeterminate progress while discovery runs.
+- PASS: 9 deterministic tests and the shaded build complete successfully.
+- PENDING: provider preference/deduplication, richer progress counts, pagination edge cases, network error fixtures and full live Tandil discovery from the revised UI.

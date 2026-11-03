@@ -25,7 +25,7 @@ make install
 make run
 ```
 
-The File menu contains **Discover Overture Maps GeoParquet...**. The mock UI supports release/theme/type, manual WGS84 bbox, max documents and a copyable list of matching asset URLs. Theme/type options are *not yet dynamically populated*. Use `transportation` / `segment` for the validated case.
+The File menu contains **Discover Overture Maps GeoParquet...**. The UI dynamically loads releases, themes and types from the static STAC catalog, defaults to the newest catalog release, and supports a manual WGS84 bbox, a document limit, cancellation, progress feedback and a copyable list of matching asset URLs. Use `transportation` / `segment` for the validated Tandil case.
 
 **Important:** It does not yet read the current JOSM viewport, invoke the GeoParquet plugin, or load layers automatically. For now, copy an asset URL into the existing GeoParquet plugin's **File > Open remote GeoParquet URL...** dialog.
 
@@ -39,6 +39,6 @@ The File menu contains **Discover Overture Maps GeoParquet...**. The mock UI sup
 
 ## Notes
 
-The original smoke test uses a compatibility normalization before kraftek Item parsing: unsupported nested STAC extension objects are stripped **only from a temporary parse copy**. This is a temporary limitation, tracked for a proper preservation strategy. Asset URLs and core STAC fields are preserved.
+The original smoke test uses a compatibility normalization before kraftek Item parsing: unsupported nested STAC extension objects are stripped **only from a temporary parse copy**. This is a temporary limitation, tracked for a proper preservation strategy. Asset URLs and core STAC fields are preserved. Metadata requests require HTTPS, use bounded retries, reject documents larger than 5 MiB and are cached for the dialog session.
 
 `make run` uses the same JVM flags as the validated `josm-geoparquet` starter. Installation paths can vary by JOSM packaging and operating system; override `JOSM_PLUGINS_DIR` if needed.

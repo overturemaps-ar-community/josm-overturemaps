@@ -1,0 +1,41 @@
+{
+  "stac_version": "1.0.0",
+  "stac_extensions": [],
+  "type": "Feature",
+  "id": "00008",
+  "collection": "segment",
+  "bbox": [-86.0010757446289, -79.81500244140625, -52.76660919189453, -33.010746002197266],
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [[
+      [-59.3, -37.5],
+      [-59.0, -37.5],
+      [-59.0, -37.2],
+      [-59.3, -37.2],
+      [-59.3, -37.5]
+    ]]
+  },
+  "properties": {
+    "datetime": "2026-10-21T00:00:00Z",
+    "storage:schemes": {"aws": {"platform": "AWS"}}
+  },
+  "assets": {
+    "aws": {
+      "href": "https://example.test/data/00008.zstd.parquet",
+      "type": "application/vnd.apache.parquet",
+      "roles": ["data"],
+      "aws.storage:refs": {"bucket": "fixture"}
+    },
+    "azure": {
+      "href": "https://mirror.example.test/data/00008.zstd.parquet",
+      "type": "application/vnd.apache.parquet",
+      "roles": ["data"]
+    },
+    "insecure": {
+      "href": "http://example.test/data/00008.zstd.parquet",
+      "type": "application/vnd.apache.parquet",
+      "roles": ["data"]
+    }
+  },
+  "links": []
+}

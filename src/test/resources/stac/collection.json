@@ -1,0 +1,15 @@
+{
+  "stac_version": "1.0.0",
+  "type": "Collection",
+  "id": "segment",
+  "description": "Fixture collection",
+  "license": "CDLA-Permissive-2.0",
+  "extent": {
+    "spatial": {"bbox": [[-180, -90, 180, 90]]},
+    "temporal": {"interval": [[null, null]]}
+  },
+  "links": [
+    {"rel": "item", "href": "https://example.test/items/00008.json"},
+    {"rel": "item", "href": "https://example.test/items/00008.json"}
+  ]
+}
