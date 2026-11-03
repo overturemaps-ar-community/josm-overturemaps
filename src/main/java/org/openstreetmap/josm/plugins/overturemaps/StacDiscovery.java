@@ -52,9 +52,13 @@ public final class StacDiscovery {
  public record Result(List<AssetMatch> matches, int documentsVisited, int itemsVisited, int matchedItems, int pendingDocuments) {
   public boolean complete() { return pendingDocuments == 0; }
  }
+ public record Progress(int documentsVisited, int itemsVisited, int matchedItems, int queuedDocuments, int maxDocuments) {}
+ @FunctionalInterface public interface ProgressListener { void update(Progress progress); }
  public record Selection(String release, String theme, String type, double[] bbox, int maxDocuments) {
   public Selection {
-   if (bbox == null || bbox.length != 4 || bbox[0] > bbox[2] || bbox[1] > bbox[3] || bbox[0] < -180 || bbox[2] > 180 || bbox[1] < -90 || bbox[3] > 90) throw new IllegalArgumentException("Invalid WGS84 bbox");
+   if (bbox == null || bbox.length != 4 || bbox[1] > bbox[3]
+     || bbox[0] < -180 || bbox[0] > 180 || bbox[2] < -180 || bbox[2] > 180
+     || bbox[1] < -90 || bbox[3] > 90) throw new IllegalArgumentException("Invalid WGS84 bbox");
    if (maxDocuments < 1) throw new IllegalArgumentException("maxDocuments must be positive");
   }
  }
@@ -112,7 +116,18 @@ public final class StacDiscovery {
   }
   return List.copyOf(result);
  }
- private static boolean intersects(double[] a, double[] b) { return a != null && a.length >= 4 && a[0] <= b[2] && a[2] >= b[0] && a[1] <= b[3] && a[3] >= b[1]; }
+ static boolean intersects(double[] a, double[] b) {
+  if (a == null || b == null || a.length < 4 || b.length < 4) return false;
+  for (double[] left : splitAntimeridian(a)) for (double[] right : splitAntimeridian(b))
+   if (left[0] <= right[2] && left[2] >= right[0] && left[1] <= right[3] && left[3] >= right[1]) return true;
+  return false;
+ }
+ static List<double[]> splitAntimeridian(double[] bbox) {
+  if (bbox[0] <= bbox[2]) return List.of(bbox.clone());
+  return List.of(
+    new double[]{bbox[0], bbox[1], 180, bbox[3]},
+    new double[]{-180, bbox[1], bbox[2], bbox[3]});
+ }
  /** Remove nested unknown extension values only in the copy passed to kraftek's ItemDeserializer. */
  private JsonNode compatibleItem(JsonNode original) {
   ObjectNode copy = ((ObjectNode)original).deepCopy();
@@ -134,6 +149,9 @@ public final class StacDiscovery {
   return copy;
  }
  public Result discover(Selection selection) throws Exception {
+  return discover(selection, progress -> {});
+ }
+ public Result discover(Selection selection, ProgressListener listener) throws Exception {
   URI release = ROOT.resolve(findChild(catalog(ROOT).getLinks(), selection.release()).getHref());
   URI theme = release.resolve(findChild(catalog(release).getLinks(), selection.theme()).getHref());
   URI type = theme.resolve(findChild(catalog(theme).getLinks(), selection.type()).getHref());
@@ -163,6 +181,7 @@ public final class StacDiscovery {
     var links = json.path("links");
     if (links.isArray()) for (JsonNode link : links) if ("next".equals(link.path("rel").asText())) pending.add(url.resolve(link.path("href").asText()));
    } else throw new IOException("Unsupported STAC type '" + kind + "' at " + url);
+   listener.update(new Progress(docs, items, matched, pending.size(), selection.maxDocuments()));
   }
   int pendingUnvisited = (int) pending.stream().filter(uri -> !visited.contains(uri)).distinct().count();
   return new Result(List.copyOf(matches), docs, items, matched, pendingUnvisited);

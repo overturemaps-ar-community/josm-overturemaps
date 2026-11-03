@@ -25,7 +25,7 @@ make install
 make run
 ```
 
-The File menu contains **Discover Overture Maps GeoParquet...**. The UI dynamically loads releases, themes and types from the static STAC catalog, defaults to the newest catalog release, and supports a manual WGS84 bbox, a document limit, cancellation, progress feedback, AWS/Azure preference and a copyable list of matching asset URLs. Mirrored provider assets are collapsed to one selected URL per logical Item. Use `transportation` / `segment` for the validated Tandil case.
+The File menu contains **Discover Overture Maps GeoParquet...**. The UI dynamically loads releases, themes and types from the static STAC catalog, defaults to the newest catalog release, and uses the current JOSM viewport in WGS84 by default with a visible manual override. It also supports a document limit, counted progress, cancellation, AWS/Azure preference and a copyable list of matching asset URLs. Mirrored provider assets are collapsed to one selected URL per logical Item. Wrapped antimeridian BBOXes are split for correct intersection. Use `transportation` / `segment` for the validated Tandil case.
 
 **Important:** It does not yet read the current JOSM viewport, invoke the GeoParquet plugin, or load layers automatically. For now, copy an asset URL into the existing GeoParquet plugin's **File > Open remote GeoParquet URL...** dialog.
 

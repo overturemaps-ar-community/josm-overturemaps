@@ -1,0 +1,7 @@
+{
+  "type": "FeatureCollection",
+  "features": [__ITEM__],
+  "links": [
+    {"rel": "next", "href": "https://example.test/pages/2.json"}
+  ]
+}

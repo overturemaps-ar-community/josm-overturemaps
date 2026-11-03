@@ -9,6 +9,8 @@
 
 ## M1 — Production-ready static STAC browser
 
+**Status: completed locally on 2026-11-03.** Dynamic catalog models, session caching, bounded HTTPS metadata reads, cancellation, counted progress, pagination/duplicate handling and deterministic fixtures are implemented. The known kraftek nested-extension compatibility normalization remains documented and preserves the original response outside its temporary parse copy.
+
 - Replace hardcoded release/theme/type inputs with dynamic catalog child link models.
 - Cache catalog JSON within session, avoid redundant requests; add configurable timeouts, retries, bounded metadata response size.
 - Improve Item parser compatibility without silently discarding needed extension fields.
@@ -17,6 +19,8 @@
 - Definition of done: deterministic list of intersecting logical Items, accurate completeness reporting.
 
 ## M2 — Viewport-driven discovery
+
+**Status: completed locally on 2026-11-03.** The dialog captures the active JOSM viewport for every discovery, exposes the exact WGS84 BBOX with manual fallback, supports antimeridian-wrapped queries, and provides AWS/Azure preference with logical-Item deduplication.
 
 - Get active JOSM map viewport bounds, transform to EPSG:4326, handle antimeridian cases and map-not-open state.
 - Manual BBOX override remains available for debugging.

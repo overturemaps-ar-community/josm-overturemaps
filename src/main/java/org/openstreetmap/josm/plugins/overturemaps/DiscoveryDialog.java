@@ -5,6 +5,7 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.ItemEvent;
 import java.net.URI;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JButton;
@@ -19,8 +20,15 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import org.openstreetmap.josm.gui.MainApplication;
-/** Deliberately small mock UI. Asset handoff to GeoParquet is a documented next milestone. */
+import org.openstreetmap.josm.gui.MapView;
+/** Viewport/manual STAC discovery UI. Asset handoff to GeoParquet is a documented next milestone. */
 public final class DiscoveryDialog {
+ private enum BboxSource {
+  CURRENT_VIEWPORT("Current JOSM viewport"), MANUAL("Manual WGS84 BBOX");
+  private final String label;
+  BboxSource(String label) { this.label = label; }
+  @Override public String toString() { return label; }
+ }
  private DiscoveryDialog() {}
  public static void show() {
   StacDiscovery service = new StacDiscovery();
@@ -29,16 +37,22 @@ public final class DiscoveryDialog {
   JComboBox<StacDiscovery.CatalogEntry> theme = new JComboBox<>();
   JComboBox<StacDiscovery.CatalogEntry> type = new JComboBox<>();
   JComboBox<StacDiscovery.ProviderPreference> provider = new JComboBox<>(StacDiscovery.ProviderPreference.values());
+  JComboBox<BboxSource> bboxSource = new JComboBox<>(BboxSource.values());
   JTextField bbox = new JTextField("-59.3,-37.5,-59.0,-37.2");
   JTextField limit = new JTextField("150");
-  JPanel form = new JPanel(new GridLayout(6, 2, 6, 6));
+  JPanel form = new JPanel(new GridLayout(7, 2, 6, 6));
   form.add(new JLabel("Release:")); form.add(release);
   form.add(new JLabel("Theme:")); form.add(theme);
   form.add(new JLabel("Type:")); form.add(type);
   form.add(new JLabel("Preferred provider:")); form.add(provider);
+  form.add(new JLabel("BBOX source:")); form.add(bboxSource);
   form.add(new JLabel("WGS84 BBOX (minLon,minLat,maxLon,maxLat):")); form.add(bbox);
   form.add(new JLabel("Max STAC documents:")); form.add(limit);
   JTextArea output = new JTextArea(14, 90); output.setEditable(false);
+  boolean mapAvailable = MainApplication.getMap() != null && MainApplication.getMap().mapView != null;
+  bboxSource.setSelectedItem(mapAvailable ? BboxSource.CURRENT_VIEWPORT : BboxSource.MANUAL);
+  bbox.setEditable(!mapAvailable);
+  if (mapAvailable) bbox.setText(formatBbox(viewportBbox(MainApplication.getMap().mapView)));
   JButton discover = new JButton("Discover GeoParquet assets");
   discover.setEnabled(false);
   JButton cancel = new JButton("Cancel"); cancel.setEnabled(false);
@@ -67,6 +81,18 @@ public final class DiscoveryDialog {
   type.addItemListener(e -> {
    if (e.getStateChange() == ItemEvent.SELECTED) discover.setEnabled(true);
   });
+  bboxSource.addItemListener(e -> {
+   if (e.getStateChange() != ItemEvent.SELECTED) return;
+   boolean manual = e.getItem() == BboxSource.MANUAL;
+   bbox.setEditable(manual);
+   if (!manual) {
+    var map = MainApplication.getMap();
+    if (map == null || map.mapView == null) {
+     output.setText("Open a JOSM map before using the current viewport.\n");
+     bboxSource.setSelectedItem(BboxSource.MANUAL);
+    } else bbox.setText(formatBbox(viewportBbox(map.mapView)));
+   }
+  });
   copy.addActionListener(e -> Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(output.getText()), null));
   cancel.addActionListener(e -> {
    SwingWorker<?, ?> worker = activeDiscovery.get();
@@ -74,17 +100,32 @@ public final class DiscoveryDialog {
   });
   discover.addActionListener(e -> {
    try {
-    double[] bounds = java.util.Arrays.stream(bbox.getText().trim().split(",")).mapToDouble(Double::parseDouble).toArray();
+    double[] bounds;
+    if (bboxSource.getSelectedItem() == BboxSource.CURRENT_VIEWPORT) {
+     var map = MainApplication.getMap();
+     if (map == null || map.mapView == null) throw new IllegalArgumentException("Open a JOSM map before using the current viewport");
+     bounds = viewportBbox(map.mapView);
+     bbox.setText(formatBbox(bounds));
+    } else bounds = java.util.Arrays.stream(bbox.getText().trim().split(",")).mapToDouble(Double::parseDouble).toArray();
     var selectedRelease = (StacDiscovery.CatalogEntry) release.getSelectedItem();
     var selectedTheme = (StacDiscovery.CatalogEntry) theme.getSelectedItem();
     var selectedType = (StacDiscovery.CatalogEntry) type.getSelectedItem();
     if (selectedRelease == null || selectedTheme == null || selectedType == null) throw new IllegalArgumentException("Wait for release, theme and type catalogs to load");
     var selection = new StacDiscovery.Selection(selectedRelease.name(), selectedTheme.name(), selectedType.name(), bounds, Integer.parseInt(limit.getText().trim()));
     discover.setEnabled(false); cancel.setEnabled(true); copy.setEnabled(false);
-    progress.setVisible(true); progress.setIndeterminate(true);
+    progress.setMinimum(0); progress.setMaximum(selection.maxDocuments()); progress.setValue(0);
+    progress.setStringPainted(true); progress.setString("Starting discovery...");
+    progress.setVisible(true); progress.setIndeterminate(false);
     output.setText("Discovering... (network operation)\n");
-    SwingWorker<StacDiscovery.Result, Void> worker = new SwingWorker<>() {
-     @Override protected StacDiscovery.Result doInBackground() throws Exception { return service.discover(selection); }
+    SwingWorker<StacDiscovery.Result, StacDiscovery.Progress> worker = new SwingWorker<>() {
+     @Override protected StacDiscovery.Result doInBackground() throws Exception { return service.discover(selection, this::publish); }
+     @Override protected void process(java.util.List<StacDiscovery.Progress> updates) {
+      if (updates.isEmpty()) return;
+      var latest = updates.get(updates.size() - 1);
+      progress.setValue(latest.documentsVisited());
+      progress.setString("Docs " + latest.documentsVisited() + "/" + latest.maxDocuments()
+        + " · Items " + latest.itemsVisited() + " · Matches " + latest.matchedItems());
+     }
      @Override protected void done() {
       discover.setEnabled(true); cancel.setEnabled(false);
       progress.setIndeterminate(false); progress.setVisible(false);
@@ -111,6 +152,33 @@ public final class DiscoveryDialog {
   dialog.add(form, BorderLayout.NORTH); dialog.add(new JScrollPane(output), BorderLayout.CENTER); dialog.add(buttons, BorderLayout.SOUTH);
   dialog.pack(); dialog.setLocationRelativeTo(MainApplication.getMainFrame()); dialog.setVisible(true);
   loadChildren(service, StacDiscovery.ROOT, release, releaseLoad, output, "releases", true);
+ }
+
+ static double[] viewportBbox(MapView view) {
+  int width = Math.max(1, view.getWidth());
+  int height = Math.max(1, view.getHeight());
+  var topLeft = view.getLatLon(0, 0);
+  var topRight = view.getLatLon(width, 0);
+  var bottomLeft = view.getLatLon(0, height);
+  var bottomRight = view.getLatLon(width, height);
+  double west = view.getLatLon(0, height / 2).lon();
+  double east = view.getLatLon(width, height / 2).lon();
+  return bboxFromCorners(west, east, topLeft.lat(), topRight.lat(), bottomLeft.lat(), bottomRight.lat());
+ }
+
+ static double[] bboxFromCorners(double west, double east, double... latitudes) {
+  if (latitudes == null || latitudes.length == 0) throw new IllegalArgumentException("Viewport latitudes are required");
+  double minLat = 90;
+  double maxLat = -90;
+  for (double latitude : latitudes) {
+   minLat = Math.min(minLat, latitude);
+   maxLat = Math.max(maxLat, latitude);
+  }
+  return new double[]{west, Math.max(-90, minLat), east, Math.min(90, maxLat)};
+ }
+
+ private static String formatBbox(double[] bounds) {
+  return String.format(Locale.ROOT, "%.7f,%.7f,%.7f,%.7f", bounds[0], bounds[1], bounds[2], bounds[3]);
  }
 
  private static void loadChildren(StacDiscovery service, URI parent,

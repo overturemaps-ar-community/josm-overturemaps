@@ -40,8 +40,17 @@
 - PASS: the live catalog returned 3 releases; the latest discovered release was `2026-10-21.0 Overture Release`, with themes `addresses`, `base`, `buildings`, `divisions`, `places`, `transportation`; transportation exposed `connector` and `segment`.
 - PASS: fixture discovery reports complete and incomplete traversal correctly, accepts nested extension objects through the compatibility copy, and filters non-HTTPS Parquet assets.
 - PASS: metadata URLs require HTTPS; HTTP requests have connect/request timeouts, three bounded attempts and a 5 MiB document limit.
-- PASS: the dialog exposes cancellation and indeterminate progress while discovery runs.
+- PASS: the dialog exposes cancellation and counted document/Item/match progress while discovery runs.
 - PASS: Auto/AWS/Azure preference returns one provider asset per logical Item; Auto prefers AWS and falls back to the first available mirror.
 - PASS: live Tandil discovery with `maxDocs=150` completed after 129 documents and 128 Items, with Item `00008` as the single match, AWS/Azure mirrors and 0 pending documents.
-- PASS: 10 deterministic tests and the shaded build complete successfully.
-- PENDING: richer progress counts, pagination edge cases and network error fixtures.
+- PASS: FeatureCollection `next` pagination, duplicate-link completeness and injected network failures have deterministic coverage.
+- PASS: 16 deterministic tests and the shaded build complete successfully.
+
+## M2 completion (2026-11-03)
+
+- PASS: the dialog defaults to the active JOSM viewport when a map is open and refreshes its WGS84 BBOX at each discovery.
+- PASS: manual BBOX remains available and is the fallback when no map view exists.
+- PASS: the exact BBOX used is visible in the dialog.
+- PASS: wrapped BBOXes such as `170,-20,-170,20` are accepted and split at ±180° for intersection checks.
+- PASS: provider preference and logical-Item deduplication were validated with the live AWS/Azure mirrors for Tandil Item `00008`.
+- PASS: moving the map and running discovery again captures the new viewport; no hardcoded Tandil BBOX is required in viewport mode.
