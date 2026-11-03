@@ -65,6 +65,8 @@
 - PASS: sortable results table supports multiple logical Items, provider and URL
   visibility, row selection, per-file status and copy fallback.
 - PASS: load errors remain isolated per row and loads can be cancelled.
-- PASS: GeoParquet service contract has 3 deterministic tests; Overture has 19.
+- PASS: GeoParquet service contract has 3 deterministic tests; Overture has 20.
 - PASS: JOSM tested 19613 loaded GeoParquet 0.3.0 before Overture 0.1.0 and
   confirmed the required import service was visible across plugin classloaders.
+- PASS: reference loading displays aggregate file progress and the geometry count
+  reported by GeoParquet for the currently active file.

@@ -71,6 +71,8 @@ public final class DiscoveryDialog {
   load.setToolTipText(bridgeAvailable ? "Load selected rows through the GeoParquet plugin"
     : "GeoParquet import service unavailable; use Copy results");
   JButton cancelLoad = new JButton("Cancel loads"); cancelLoad.setEnabled(false);
+  JProgressBar loadProgress = new JProgressBar();
+  loadProgress.setStringPainted(true); loadProgress.setVisible(false);
   JProgressBar progress = new JProgressBar();
   progress.setIndeterminate(false);
   progress.setVisible(false);
@@ -120,23 +122,37 @@ public final class DiscoveryDialog {
    var rows = results.selectedOrAll(java.util.Arrays.stream(resultTable.getSelectedRows())
      .map(resultTable::convertRowIndexToModel).toArray());
    loadCancelled.set(false); load.setEnabled(false); cancelLoad.setEnabled(true);
+   loadProgress.setMinimum(0); loadProgress.setMaximum(rows.size()); loadProgress.setValue(0);
+   loadProgress.setString("Loading 0/" + rows.size() + " files..."); loadProgress.setVisible(true);
    java.util.concurrent.atomic.AtomicInteger pendingLoads = new java.util.concurrent.atomic.AtomicInteger(rows.size());
+   java.util.concurrent.atomic.AtomicInteger completedLoads = new java.util.concurrent.atomic.AtomicInteger();
    for (int row : rows) {
     var asset = results.assetAt(row);
     results.status(row, "Loading...");
     try {
      String layerName = "Overture " + asset.itemId() + " (" + asset.provider() + ")";
-     GeoParquetBridge.load(asset.url(), layerName, loadBbox, ignored -> {}, loadCancelled::get)
+     GeoParquetBridge.load(asset.url(), layerName, loadBbox, update -> javax.swing.SwingUtilities.invokeLater(() -> {
+        results.status(row, "Loading... " + update.geometriesRead() + " geometries");
+        loadProgress.setString("Loading " + completedLoads.get() + "/" + rows.size()
+          + " files · " + update.geometriesRead() + " geometries in current file");
+       }), loadCancelled::get)
        .whenComplete((loaded, failure) -> javax.swing.SwingUtilities.invokeLater(() -> {
         if (failure == null) results.status(row, "Loaded read-only");
         else results.status(row, loadCancelled.get() ? "Cancelled" : "Failed: " + rootMessage(failure));
+        int complete = completedLoads.incrementAndGet();
+        loadProgress.setValue(complete);
+        loadProgress.setString(complete + "/" + rows.size() + " files completed");
         if (pendingLoads.decrementAndGet() == 0) {
          cancelLoad.setEnabled(false); load.setEnabled(bridgeAvailable && !results.isEmpty());
+         loadProgress.setVisible(false);
         }
        }));
     } catch (Exception failure) {
      results.status(row, "Failed: " + rootMessage(failure));
-     if (pendingLoads.decrementAndGet() == 0) { cancelLoad.setEnabled(false); load.setEnabled(true); }
+     int complete = completedLoads.incrementAndGet(); loadProgress.setValue(complete);
+     if (pendingLoads.decrementAndGet() == 0) {
+      cancelLoad.setEnabled(false); load.setEnabled(true); loadProgress.setVisible(false);
+     }
     }
    }
   });
@@ -198,9 +214,10 @@ public final class DiscoveryDialog {
    } catch (Exception ex) { JOptionPane.showMessageDialog(dialog, ex.getMessage(), "Invalid selection", JOptionPane.ERROR_MESSAGE); }
   });
   JPanel buttons = new JPanel(); buttons.add(discover); buttons.add(cancel); buttons.add(load); buttons.add(cancelLoad); buttons.add(copy); buttons.add(progress);
+  JPanel footer = new JPanel(new BorderLayout()); footer.add(buttons, BorderLayout.CENTER); footer.add(loadProgress, BorderLayout.SOUTH);
   JSplitPane content = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(resultTable), new JScrollPane(output));
   content.setResizeWeight(0.65);
-  dialog.add(form, BorderLayout.NORTH); dialog.add(content, BorderLayout.CENTER); dialog.add(buttons, BorderLayout.SOUTH);
+  dialog.add(form, BorderLayout.NORTH); dialog.add(content, BorderLayout.CENTER); dialog.add(footer, BorderLayout.SOUTH);
   dialog.pack(); dialog.setSize(1100, 700); dialog.setLocationRelativeTo(MainApplication.getMainFrame()); dialog.setVisible(true);
   loadChildren(service, StacDiscovery.ROOT, release, releaseLoad, output, "releases", true);
  }

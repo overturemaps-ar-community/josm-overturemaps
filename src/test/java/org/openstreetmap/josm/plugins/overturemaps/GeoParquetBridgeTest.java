@@ -17,4 +17,10 @@ class GeoParquetBridgeTest {
         assertThrows(IllegalArgumentException.class,
                 () -> GeoParquetBridge.toBounds(new double[]{170, -20, -170, 20}));
     }
+
+    @Test void exposesTypedProgressValues() {
+        var progress = new GeoParquetBridge.Progress("reading", 42);
+        assertEquals("reading", progress.stage());
+        assertEquals(42, progress.geometriesRead());
+    }
 }

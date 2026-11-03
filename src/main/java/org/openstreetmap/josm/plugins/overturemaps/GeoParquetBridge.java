@@ -12,6 +12,7 @@ import org.openstreetmap.josm.data.Bounds;
 final class GeoParquetBridge {
     private static final String SERVICE = "org.openstreetmap.josm.plugins.geoparquet.GeoParquetImportService";
     private GeoParquetBridge() {}
+    record Progress(String stage, int geometriesRead) {}
 
     static boolean available() {
         try { serviceClass(); return true; }
@@ -19,14 +20,26 @@ final class GeoParquetBridge {
     }
 
     static CompletableFuture<?> load(URI uri, String layerName, double[] bbox,
-            Consumer<Object> progress, BooleanSupplier cancelled) throws ReflectiveOperationException {
+            Consumer<Progress> progress, BooleanSupplier cancelled) throws ReflectiveOperationException {
         Method method = serviceClass().getMethod("loadRemote", URI.class, String.class, Bounds.class,
                 Consumer.class, BooleanSupplier.class);
         try {
-            return (CompletableFuture<?>) method.invoke(null, uri, layerName, toBounds(bbox), progress, cancelled);
+            Consumer<Object> adapter = value -> progress.accept(progressValue(value));
+            return (CompletableFuture<?>) method.invoke(null, uri, layerName, toBounds(bbox), adapter, cancelled);
         } catch (InvocationTargetException e) {
             if (e.getCause() instanceof RuntimeException runtime) throw runtime;
             throw e;
+        }
+    }
+
+    private static Progress progressValue(Object value) {
+        if (value == null) return new Progress("loading", 0);
+        try {
+            String stage = String.valueOf(value.getClass().getMethod("stage").invoke(value));
+            int count = ((Number) value.getClass().getMethod("geometriesRead").invoke(value)).intValue();
+            return new Progress(stage, count);
+        } catch (ReflectiveOperationException | ClassCastException e) {
+            return new Progress("loading", 0);
         }
     }
 
