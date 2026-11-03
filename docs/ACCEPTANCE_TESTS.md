@@ -41,5 +41,7 @@
 - PASS: fixture discovery reports complete and incomplete traversal correctly, accepts nested extension objects through the compatibility copy, and filters non-HTTPS Parquet assets.
 - PASS: metadata URLs require HTTPS; HTTP requests have connect/request timeouts, three bounded attempts and a 5 MiB document limit.
 - PASS: the dialog exposes cancellation and indeterminate progress while discovery runs.
-- PASS: 9 deterministic tests and the shaded build complete successfully.
-- PENDING: provider preference/deduplication, richer progress counts, pagination edge cases, network error fixtures and full live Tandil discovery from the revised UI.
+- PASS: Auto/AWS/Azure preference returns one provider asset per logical Item; Auto prefers AWS and falls back to the first available mirror.
+- PASS: live Tandil discovery with `maxDocs=150` completed after 129 documents and 128 Items, with Item `00008` as the single match, AWS/Azure mirrors and 0 pending documents.
+- PASS: 10 deterministic tests and the shaded build complete successfully.
+- PENDING: richer progress counts, pagination edge cases and network error fixtures.

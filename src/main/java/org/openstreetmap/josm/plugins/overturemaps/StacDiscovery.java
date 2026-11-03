@@ -21,6 +21,7 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,6 +42,12 @@ public final class StacDiscovery {
  public record AssetMatch(String itemId, String provider, URI url, double[] itemBbox) {}
  public record CatalogEntry(String name, URI url) {
   @Override public String toString() { return name; }
+ }
+ public enum ProviderPreference {
+  AUTO("Auto (prefer AWS)"), AWS("AWS"), AZURE("Azure");
+  private final String label;
+  ProviderPreference(String label) { this.label = label; }
+  @Override public String toString() { return label; }
  }
  public record Result(List<AssetMatch> matches, int documentsVisited, int itemsVisited, int matchedItems, int pendingDocuments) {
   public boolean complete() { return pendingDocuments == 0; }
@@ -174,5 +181,17 @@ public final class StacDiscovery {
      output.add(new AssetMatch(item.getId(), e.getKey(), url, item.getBbox()));
    }
   }
+ }
+ public static List<AssetMatch> preferredAssets(List<AssetMatch> matches, ProviderPreference preference) {
+  Map<String, List<AssetMatch>> byItem = new LinkedHashMap<>();
+  for (AssetMatch match : matches) byItem.computeIfAbsent(match.itemId(), ignored -> new ArrayList<>()).add(match);
+  List<AssetMatch> selected = new ArrayList<>();
+  for (List<AssetMatch> assets : byItem.values()) {
+   String desired = preference == ProviderPreference.AZURE ? "azure" : "aws";
+   AssetMatch choice = assets.stream().filter(asset -> desired.equalsIgnoreCase(asset.provider())).findFirst()
+     .orElseGet(() -> assets.get(0));
+   selected.add(choice);
+  }
+  return List.copyOf(selected);
  }
 }

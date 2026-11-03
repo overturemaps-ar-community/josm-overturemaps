@@ -39,4 +39,4 @@ No OSM data edits, automatic upload, conflation, routing validation, Overture-to
 
 ## 6. Current implementation status
 
-The dialog dynamically loads release/theme/type options from catalog `child` links, defaults to the latest discovered release, and retains manual bbox, maxDocs and copyable URLs. Cancellation and indeterminate progress feedback are implemented. Viewport extraction, provider preference/deduplication, detailed progress and the cross-plugin load action remain planned.
+The dialog dynamically loads release/theme/type options from catalog `child` links, defaults to the latest discovered release, and retains manual bbox, maxDocs and copyable URLs. Cancellation, indeterminate progress feedback, AWS/Azure preference and logical-Item provider deduplication are implemented. Viewport extraction, detailed progress and the cross-plugin load action remain planned.

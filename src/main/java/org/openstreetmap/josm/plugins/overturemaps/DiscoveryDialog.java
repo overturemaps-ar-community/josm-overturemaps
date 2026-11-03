@@ -28,12 +28,14 @@ public final class DiscoveryDialog {
   JComboBox<StacDiscovery.CatalogEntry> release = new JComboBox<>();
   JComboBox<StacDiscovery.CatalogEntry> theme = new JComboBox<>();
   JComboBox<StacDiscovery.CatalogEntry> type = new JComboBox<>();
+  JComboBox<StacDiscovery.ProviderPreference> provider = new JComboBox<>(StacDiscovery.ProviderPreference.values());
   JTextField bbox = new JTextField("-59.3,-37.5,-59.0,-37.2");
   JTextField limit = new JTextField("150");
-  JPanel form = new JPanel(new GridLayout(5, 2, 6, 6));
+  JPanel form = new JPanel(new GridLayout(6, 2, 6, 6));
   form.add(new JLabel("Release:")); form.add(release);
   form.add(new JLabel("Theme:")); form.add(theme);
   form.add(new JLabel("Type:")); form.add(type);
+  form.add(new JLabel("Preferred provider:")); form.add(provider);
   form.add(new JLabel("WGS84 BBOX (minLon,minLat,maxLon,maxLat):")); form.add(bbox);
   form.add(new JLabel("Max STAC documents:")); form.add(limit);
   JTextArea output = new JTextArea(14, 90); output.setEditable(false);
@@ -92,7 +94,10 @@ public final class DiscoveryDialog {
        var result = get();
        StringBuilder text = new StringBuilder("Documents=" + result.documentsVisited() + " Items=" + result.itemsVisited() + " Matched=" + result.matchedItems() + " Pending=" + result.pendingDocuments() + "\n");
        if (!result.complete()) text.append("INCOMPLETE: document limit reached.\n");
-       for (var asset : result.matches()) text.append(asset.itemId()).append(" [").append(asset.provider()).append("] ").append(asset.url()).append('\n');
+       var preference = (StacDiscovery.ProviderPreference) provider.getSelectedItem();
+       var selectedAssets = StacDiscovery.preferredAssets(result.matches(), preference);
+       text.append("SelectedAssets=").append(selectedAssets.size()).append(" ProviderPreference=").append(preference).append('\n');
+       for (var asset : selectedAssets) text.append(asset.itemId()).append(" [").append(asset.provider()).append("] ").append(asset.url()).append('\n');
        text.append("\nGeoParquet plugin handoff: NOT YET IMPLEMENTED. Copy the HTTPS URL and open it via File > Open remote GeoParquet URL...\n");
        output.setText(text.toString()); copy.setEnabled(true);
       } catch (Exception ex) { output.setText("Discovery failed: " + ex); }

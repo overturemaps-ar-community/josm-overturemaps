@@ -65,6 +65,20 @@ class StacDiscoveryTest {
   assertEquals(1, result.itemsVisited());
  }
 
+ @Test void selectsOnePreferredProviderPerLogicalItem() throws Exception {
+  StacDiscovery discovery = fixtureDiscovery(new AtomicInteger());
+  var result = discovery.discover(new StacDiscovery.Selection(
+    "2026-10-21.0", "transportation", "segment",
+    new double[]{-59.3, -37.5, -59.0, -37.2}, 10));
+
+  var automatic = StacDiscovery.preferredAssets(result.matches(), StacDiscovery.ProviderPreference.AUTO);
+  var azure = StacDiscovery.preferredAssets(result.matches(), StacDiscovery.ProviderPreference.AZURE);
+  assertEquals(1, automatic.size());
+  assertEquals("aws", automatic.get(0).provider());
+  assertEquals(1, azure.size());
+  assertEquals("azure", azure.get(0).provider());
+ }
+
  @Test void cachesCatalogDocumentsWithinSession() throws Exception {
   AtomicInteger fetches = new AtomicInteger();
   StacDiscovery discovery = fixtureDiscovery(fetches);
