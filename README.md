@@ -1,0 +1,44 @@
+# josm-overturemaps — kickoff scaffold
+
+A standalone JOSM plugin for discovering Overture Maps GeoParquet files using its static STAC catalog. **Prototype / scaffold, not a finished integration.**
+
+## Validated baseline (2026-11-03)
+
+The earlier independent smoke test successfully traversed the Overture release catalog and discovered `transportation/segment` Item `00008`, with AWS and Azure HTTPS `.zstd.parquet` assets intersecting Tandil bbox `-59.3,-37.5,-59.0,-37.2`. The run stopped at `maxDocs=100` with 29 pending documents. That discovery run predated the JOSM scaffold validation described below.
+
+Milestone M0 was subsequently completed with OpenJDK `25.0.4.1`, Maven `3.6.3`, and JOSM tested version `19613`. The unit tests and shaded JAR build passed, the manifest was inspected, and an isolated JOSM profile loaded both `geoparquet 0.2.0` and `overturemaps 0.1.0`. The File menu action and discovery dialog were verified in a virtual display. Cross-plugin loading remains intentionally unimplemented.
+
+## Dependencies
+
+- Java 25 (matches the existing GeoParquet plugin)
+- Maven, Git, curl, JOSM tested JAR
+- `com.kraftek:stac-client:1.0.0` installed locally from https://github.com/kraftek/stac
+- **JOSM GeoParquet plugin installed separately**: `geoparquet.jar` from the user's existing project. Plugin manifest declares `Plugin-Requires: geoparquet`.
+
+## First steps
+
+```bash
+make bootstrap
+make test
+make build
+make install
+make run
+```
+
+The File menu contains **Discover Overture Maps GeoParquet...**. The mock UI supports release/theme/type, manual WGS84 bbox, max documents and a copyable list of matching asset URLs. Theme/type options are *not yet dynamically populated*. Use `transportation` / `segment` for the validated case.
+
+**Important:** It does not yet read the current JOSM viewport, invoke the GeoParquet plugin, or load layers automatically. For now, copy an asset URL into the existing GeoParquet plugin's **File > Open remote GeoParquet URL...** dialog.
+
+## Docs
+
+- [Product and functional specification](docs/PRODUCT_SPEC.md)
+- [Architecture and integration contract](docs/ARCHITECTURE.md)
+- [Implementation plan for Codex](docs/IMPLEMENTATION_PLAN.md)
+- [Acceptance tests](docs/ACCEPTANCE_TESTS.md)
+- [Agent instructions](AGENTS.md)
+
+## Notes
+
+The original smoke test uses a compatibility normalization before kraftek Item parsing: unsupported nested STAC extension objects are stripped **only from a temporary parse copy**. This is a temporary limitation, tracked for a proper preservation strategy. Asset URLs and core STAC fields are preserved.
+
+`make run` uses the same JVM flags as the validated `josm-geoparquet` starter. Installation paths can vary by JOSM packaging and operating system; override `JOSM_PLUGINS_DIR` if needed.

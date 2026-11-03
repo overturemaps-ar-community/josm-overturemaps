@@ -1,0 +1,35 @@
+# Acceptance tests and evidence
+
+## Previously validated independently (smoke test, 2026-11-03)
+
+- PASS: root `https://stac.overturemaps.org/catalog.json`, release `2026-10-21.0`, theme `transportation`, type `segment`.
+- PASS: STAC Collection `segment`, 131 links.
+- PASS: Item `00008` bbox `[-86.0010757446289,-79.81500244140625,-52.76660919189453,-33.010746002197266]` intersects Tandil `[-59.3,-37.5,-59.0,-37.2]`.
+- PASS: AWS/Azure HTTPS Parquet URLs found.
+- INCOMPLETE: `maxDocs=100`, 99 Items, 1 matching Item, 2 provider assets, 29 pending documents.
+
+## Scaffold validation (M0 completed 2026-11-03)
+
+1. PASS: `make bootstrap` fetched JOSM and installed kraftek STAC client from source.
+2. PASS: `make test` passed all unit tests on OpenJDK `25.0.4.1` and Maven `3.6.3`.
+3. PASS: `make build` created an `8.8 MB` `target/overturemaps.jar`; archive integrity and manifest entries `Plugin-Class`, `Plugin-Requires: geoparquet`, and Java 25 were verified.
+4. PASS: `make install` installed the plugin; JOSM tested version `19613` loaded `geoparquet 0.2.0` followed by `overturemaps 0.1.0` in an isolated profile.
+5. PASS: the File menu action and mock discovery UI opened in an Xvfb virtual display. Network discovery and clipboard behavior were not exercised as part of M0.
+6. `maxDocs=150` should allow completion for this known release/type if all links remain stable; verify rather than assume.
+7. UI explicitly reports incomplete discovery when maxDocs is too small.
+8. GeoParquet handoff is **not implemented**; manually paste URL into GeoParquet remote dialog.
+
+### M0 observations
+
+- The menu action initially appeared after Exit; it was changed to insert immediately before Exit and covered by a unit test.
+- Maven warns that the project-local JOSM `systemPath` is not suitable for downstream consumers.
+- The shaded STAC dependency graph produces an `8.8 MB` plugin and reports duplicate metadata resources across GeoTools, EMF, Jackson and related libraries. This should be reviewed before distribution but did not break M0.
+- JOSM logs an unrelated default-imagery parsing error for `tileMatrixSet=grid_25833` in the isolated profile; both plugins still load successfully.
+
+## Additional tests required before M3
+
+- Fixture tests for Item unknown nested fields and correct core bbox/assets.
+- Network failure, 404, redirects, timeout, invalid bbox, empty catalog, pagination, duplicate items, mirrored assets.
+- Antimeridian, no map view, and no GeoParquet plugin installed.
+- Multi-Item matching for wide BBOX and correct filtering by current viewport.
+- No write/upload action to OSM.
