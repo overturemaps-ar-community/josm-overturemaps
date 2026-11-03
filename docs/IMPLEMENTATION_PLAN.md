@@ -29,6 +29,10 @@
 
 ## M3 — Cross-plugin integration (requires changes in `josm-geoparquet`)
 
+**Status: completed locally on 2026-11-03.** GeoParquet exposes an asynchronous,
+cancelable `GeoParquetImportService`; Overture invokes it without bundling the reader
+and keeps URL copy as fallback.
+
 - Define and implement stable `GeoParquetImportService` public API in GeoParquet repo.
 - Specify method parameters: URI, layer name, bbox/viewport, progress, cancellation and read-only behavior.
 - Verify JOSM plugin classloader behavior; avoid embedding the GeoParquet library or its code in this project.
@@ -36,6 +40,11 @@
 - Definition of done: one click loads a read-only Overture reference layer, with HTTP Range and viewport feature filtering handled by GeoParquet.
 
 ## M4 — UX and hardening
+
+**Status: completed locally on 2026-11-03.** Results use a sortable multi-file table
+with provider, BBOX, URL and per-file load state. Discovery/load cancellation,
+provider preference, error recovery, session metadata caching, styling delegation,
+tests and packaging validation are present.
 
 - Results table, status, error recovery, provider preferences, styling integration, caching, tests with multiple files and mirror URLs.
 - Documentation and JOSM plugin packaging/distribution validation.

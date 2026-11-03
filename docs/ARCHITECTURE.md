@@ -4,12 +4,14 @@
 JOSM (Swing / map viewport)
   └── josm-overturemaps
       ├── OvertureMapsPlugin — menu registration
-      ├── DiscoveryDialog — initial mock UI / background worker
+      ├── DiscoveryDialog — discovery/results/load UI and background workers
+      ├── GeoParquetBridge — verified boundary to the required plugin service
+      ├── AssetTableModel — sortable multi-file results and load status
       └── StacDiscovery — static STAC navigation, bbox filtering, HTTPS asset discovery
           └── com.kraftek:stac-client:1.0.0 + Jackson
 
   └── josm-geoparquet (separate installed plugin)
-      ├── [future] stable public import service
+      ├── GeoParquetImportService — stable async import service
       ├── Parquetry / HTTP Range
       └── read-only JOSM reference layers
 ```
@@ -29,17 +31,25 @@ Manifest: `Plugin-Class=...OvertureMapsPlugin`, `Plugin-Requires=geoparquet`. Bu
 
 The smoke test established an intersecting `transportation/segment` Item `00008`, but only searched 99 Items, not the full collection. The current scaffold follows the same algorithm and is not yet performance-optimized.
 
-## Integration contract (proposed; **not implemented**)
+## Integration contract
 
-In `josm-geoparquet`, add a stable public class such as:
+`josm-geoparquet` provides:
 
 ```java
-public final class GeoParquetImportService {
-    public static void openRemote(java.net.URI url, String layerName);
-}
+CompletableFuture<ImportResult> loadRemote(
+    URI url, String layerName, Bounds bbox,
+    Consumer<Progress> progress, BooleanSupplier cancelled);
 ```
 
-The final API must specify threading, exceptions, progress/cancellation, BBOX, provider selection, and the creation of JOSM layers. The existing `GeoParquetRemoteAction.open()` is an interactive dialog and **not** an appropriate programmatic API. Prefer compile-time API via a small shared interface or a verified JOSM plugin service; confirm plugin classloader constraints. Avoid reflection unless absolutely necessary and documented.
+The service specifies threading, exceptions, progress/cancellation, BBOX and creation
+of read-only JOSM layers. Provider selection remains in Overture before handoff.
+`GeoParquetRemoteAction.open()` remains only an interactive entry point.
+
+The bridge resolves this service reflectively because the two plugins are distributed
+as independent JARs and GeoParquet is deliberately not a build or shaded dependency.
+JOSM's `Plugin-Requires: geoparquet` establishes runtime ordering and classloader
+visibility. The reflected method signature uses only JDK and JOSM types; absence or
+version mismatch is surfaced in the UI and URL copy remains available.
 
 ## Security and correctness
 

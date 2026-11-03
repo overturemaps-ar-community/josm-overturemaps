@@ -7,6 +7,7 @@ import java.awt.event.ItemEvent;
 import java.net.URI;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -16,12 +17,15 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+import javax.swing.JSplitPane;
+import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingWorker;
 import org.openstreetmap.josm.gui.MainApplication;
 import org.openstreetmap.josm.gui.MapView;
-/** Viewport/manual STAC discovery UI. Asset handoff to GeoParquet is a documented next milestone. */
+import org.openstreetmap.josm.tools.Logging;
+/** Viewport/manual STAC discovery UI with read-only GeoParquet layer handoff. */
 public final class DiscoveryDialog {
  private enum BboxSource {
   CURRENT_VIEWPORT("Current JOSM viewport"), MANUAL("Manual WGS84 BBOX");
@@ -49,6 +53,10 @@ public final class DiscoveryDialog {
   form.add(new JLabel("WGS84 BBOX (minLon,minLat,maxLon,maxLat):")); form.add(bbox);
   form.add(new JLabel("Max STAC documents:")); form.add(limit);
   JTextArea output = new JTextArea(14, 90); output.setEditable(false);
+  AssetTableModel results = new AssetTableModel();
+  JTable resultTable = new JTable(results);
+  resultTable.setAutoCreateRowSorter(true);
+  resultTable.setFillsViewportHeight(true);
   boolean mapAvailable = MainApplication.getMap() != null && MainApplication.getMap().mapView != null;
   bboxSource.setSelectedItem(mapAvailable ? BboxSource.CURRENT_VIEWPORT : BboxSource.MANUAL);
   bbox.setEditable(!mapAvailable);
@@ -57,10 +65,18 @@ public final class DiscoveryDialog {
   discover.setEnabled(false);
   JButton cancel = new JButton("Cancel"); cancel.setEnabled(false);
   JButton copy = new JButton("Copy results"); copy.setEnabled(false);
+  JButton load = new JButton("Load selected as reference layer"); load.setEnabled(false);
+  boolean bridgeAvailable = GeoParquetBridge.available();
+  Logging.info("Overture Maps: GeoParquet import service available: {0}", bridgeAvailable);
+  load.setToolTipText(bridgeAvailable ? "Load selected rows through the GeoParquet plugin"
+    : "GeoParquet import service unavailable; use Copy results");
+  JButton cancelLoad = new JButton("Cancel loads"); cancelLoad.setEnabled(false);
   JProgressBar progress = new JProgressBar();
   progress.setIndeterminate(false);
   progress.setVisible(false);
   AtomicReference<SwingWorker<?, ?>> activeDiscovery = new AtomicReference<>();
+  AtomicReference<double[]> discoveredBbox = new AtomicReference<>();
+  AtomicBoolean loadCancelled = new AtomicBoolean();
   AtomicLong releaseLoad = new AtomicLong();
   AtomicLong themeLoad = new AtomicLong();
   AtomicLong typeLoad = new AtomicLong();
@@ -94,6 +110,37 @@ public final class DiscoveryDialog {
    }
   });
   copy.addActionListener(e -> Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(output.getText()), null));
+  load.addActionListener(e -> {
+   if (!bridgeAvailable) {
+    JOptionPane.showMessageDialog(dialog, "GeoParquet plugin service is unavailable. Copy the URL and open it manually.",
+      "GeoParquet plugin unavailable", JOptionPane.ERROR_MESSAGE); return;
+   }
+   double[] loadBbox = discoveredBbox.get();
+   if (loadBbox == null) return;
+   var rows = results.selectedOrAll(java.util.Arrays.stream(resultTable.getSelectedRows())
+     .map(resultTable::convertRowIndexToModel).toArray());
+   loadCancelled.set(false); load.setEnabled(false); cancelLoad.setEnabled(true);
+   java.util.concurrent.atomic.AtomicInteger pendingLoads = new java.util.concurrent.atomic.AtomicInteger(rows.size());
+   for (int row : rows) {
+    var asset = results.assetAt(row);
+    results.status(row, "Loading...");
+    try {
+     String layerName = "Overture " + asset.itemId() + " (" + asset.provider() + ")";
+     GeoParquetBridge.load(asset.url(), layerName, loadBbox, ignored -> {}, loadCancelled::get)
+       .whenComplete((loaded, failure) -> javax.swing.SwingUtilities.invokeLater(() -> {
+        if (failure == null) results.status(row, "Loaded read-only");
+        else results.status(row, loadCancelled.get() ? "Cancelled" : "Failed: " + rootMessage(failure));
+        if (pendingLoads.decrementAndGet() == 0) {
+         cancelLoad.setEnabled(false); load.setEnabled(bridgeAvailable && !results.isEmpty());
+        }
+       }));
+    } catch (Exception failure) {
+     results.status(row, "Failed: " + rootMessage(failure));
+     if (pendingLoads.decrementAndGet() == 0) { cancelLoad.setEnabled(false); load.setEnabled(true); }
+    }
+   }
+  });
+  cancelLoad.addActionListener(e -> { loadCancelled.set(true); cancelLoad.setEnabled(false); });
   cancel.addActionListener(e -> {
    SwingWorker<?, ?> worker = activeDiscovery.get();
    if (worker != null) worker.cancel(true);
@@ -113,6 +160,7 @@ public final class DiscoveryDialog {
     if (selectedRelease == null || selectedTheme == null || selectedType == null) throw new IllegalArgumentException("Wait for release, theme and type catalogs to load");
     var selection = new StacDiscovery.Selection(selectedRelease.name(), selectedTheme.name(), selectedType.name(), bounds, Integer.parseInt(limit.getText().trim()));
     discover.setEnabled(false); cancel.setEnabled(true); copy.setEnabled(false);
+    load.setEnabled(false); results.setAssets(java.util.List.of()); discoveredBbox.set(bounds.clone());
     progress.setMinimum(0); progress.setMaximum(selection.maxDocuments()); progress.setValue(0);
     progress.setStringPainted(true); progress.setString("Starting discovery...");
     progress.setVisible(true); progress.setIndeterminate(false);
@@ -137,10 +185,11 @@ public final class DiscoveryDialog {
        if (!result.complete()) text.append("INCOMPLETE: document limit reached.\n");
        var preference = (StacDiscovery.ProviderPreference) provider.getSelectedItem();
        var selectedAssets = StacDiscovery.preferredAssets(result.matches(), preference);
+       results.setAssets(selectedAssets);
        text.append("SelectedAssets=").append(selectedAssets.size()).append(" ProviderPreference=").append(preference).append('\n');
        for (var asset : selectedAssets) text.append(asset.itemId()).append(" [").append(asset.provider()).append("] ").append(asset.url()).append('\n');
-       text.append("\nGeoParquet plugin handoff: NOT YET IMPLEMENTED. Copy the HTTPS URL and open it via File > Open remote GeoParquet URL...\n");
-       output.setText(text.toString()); copy.setEnabled(true);
+       if (!bridgeAvailable) text.append("\nGeoParquet plugin service unavailable; Copy results remains available.\n");
+       output.setText(text.toString()); copy.setEnabled(true); load.setEnabled(bridgeAvailable && !selectedAssets.isEmpty());
       } catch (Exception ex) { output.setText("Discovery failed: " + ex); }
      }
     };
@@ -148,10 +197,18 @@ public final class DiscoveryDialog {
     worker.execute();
    } catch (Exception ex) { JOptionPane.showMessageDialog(dialog, ex.getMessage(), "Invalid selection", JOptionPane.ERROR_MESSAGE); }
   });
-  JPanel buttons = new JPanel(); buttons.add(discover); buttons.add(cancel); buttons.add(copy); buttons.add(progress);
-  dialog.add(form, BorderLayout.NORTH); dialog.add(new JScrollPane(output), BorderLayout.CENTER); dialog.add(buttons, BorderLayout.SOUTH);
-  dialog.pack(); dialog.setLocationRelativeTo(MainApplication.getMainFrame()); dialog.setVisible(true);
+  JPanel buttons = new JPanel(); buttons.add(discover); buttons.add(cancel); buttons.add(load); buttons.add(cancelLoad); buttons.add(copy); buttons.add(progress);
+  JSplitPane content = new JSplitPane(JSplitPane.VERTICAL_SPLIT, new JScrollPane(resultTable), new JScrollPane(output));
+  content.setResizeWeight(0.65);
+  dialog.add(form, BorderLayout.NORTH); dialog.add(content, BorderLayout.CENTER); dialog.add(buttons, BorderLayout.SOUTH);
+  dialog.pack(); dialog.setSize(1100, 700); dialog.setLocationRelativeTo(MainApplication.getMainFrame()); dialog.setVisible(true);
   loadChildren(service, StacDiscovery.ROOT, release, releaseLoad, output, "releases", true);
+ }
+
+ private static String rootMessage(Throwable failure) {
+  Throwable cause = failure;
+  while (cause.getCause() != null) cause = cause.getCause();
+  return cause.getMessage() == null ? cause.getClass().getSimpleName() : cause.getMessage();
  }
 
  static double[] viewportBbox(MapView view) {

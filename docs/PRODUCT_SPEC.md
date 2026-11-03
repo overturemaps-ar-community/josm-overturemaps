@@ -39,4 +39,4 @@ No OSM data edits, automatic upload, conflation, routing validation, Overture-to
 
 ## 6. Current implementation status
 
-The dialog dynamically loads release/theme/type options from catalog `child` links, defaults to the latest discovered release, and uses the current JOSM viewport with a visible manual override. Cancellation, counted progress, AWS/Azure preference, logical-Item provider deduplication and antimeridian-aware intersection are implemented. The cross-plugin load action remains planned for M3.
+The dialog dynamically loads release/theme/type options from catalog `child` links, defaults to the latest discovered release, and uses the current JOSM viewport with a visible manual override. Cancellation, counted progress, AWS/Azure preference, logical-Item provider deduplication and antimeridian-aware intersection are implemented. The results table loads one or more assets through the public GeoParquet service, with per-file status, cancellation and URL-copy fallback. Loaded content is a separate read-only reference layer; no OSM editing or upload path is introduced.

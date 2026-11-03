@@ -54,3 +54,17 @@
 - PASS: wrapped BBOXes such as `170,-20,-170,20` are accepted and split at ±180° for intersection checks.
 - PASS: provider preference and logical-Item deduplication were validated with the live AWS/Azure mirrors for Tandil Item `00008`.
 - PASS: moving the map and running discovery again captures the new viewport; no hardcoded Tandil BBOX is required in viewport mode.
+
+## M3 and M4 completion (2026-11-03)
+
+- PASS: GeoParquet provides a public HTTPS/BBOX/layer-name/progress/cancellation API.
+- PASS: remote reads remain in GeoParquet, run off EDT and register only a read-only
+  `GeoParquetReferenceLayer` on EDT.
+- PASS: Overture does not embed Parquetry or duplicate HTTP Range, filtering,
+  rendering or styling code.
+- PASS: sortable results table supports multiple logical Items, provider and URL
+  visibility, row selection, per-file status and copy fallback.
+- PASS: load errors remain isolated per row and loads can be cancelled.
+- PASS: GeoParquet service contract has 3 deterministic tests; Overture has 19.
+- PASS: JOSM tested 19613 loaded GeoParquet 0.3.0 before Overture 0.1.0 and
+  confirmed the required import service was visible across plugin classloaders.
