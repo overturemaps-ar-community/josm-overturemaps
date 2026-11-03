@@ -42,6 +42,12 @@ remains available as a fallback.
 - [Acceptance tests](docs/ACCEPTANCE_TESTS.md)
 - [Agent instructions](AGENTS.md)
 
+## Releases
+
+Pushing a semantic-version tag such as `v0.1.0` runs GitHub Actions with Java 25,
+tests and packages the plugin, verifies that the manifest version matches the tag,
+and creates a GitHub Release containing `overturemaps-0.1.0.jar` plus its SHA-256 file.
+
 ## Notes
 
 The original smoke test uses a compatibility normalization before kraftek Item parsing: unsupported nested STAC extension objects are stripped **only from a temporary parse copy**. This is a temporary limitation, tracked for a proper preservation strategy. Asset URLs and core STAC fields are preserved. Metadata requests require HTTPS, use bounded retries, reject documents larger than 5 MiB and are cached for the dialog session.
