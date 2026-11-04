@@ -26,6 +26,21 @@ implemented and covered by deterministic tests.
 - **JOSM GeoParquet plugin installed separately**: a compatible `geoparquet.jar`.
   The plugin manifest declares `Plugin-Requires: geoparquet`.
 
+## Install published releases
+
+Both plugins are available without authentication from their public release pages:
+
+1. Download and install
+   [GeoParquet](https://github.com/geoverse-dev/josm-geoparquet/releases) as
+   `geoparquet.jar`.
+2. Download
+   [Overture Maps](https://github.com/overturemaps-ar-community/josm-overturemaps/releases)
+   as `overturemaps.jar` into the same JOSM plugins directory.
+3. Enable both plugins and start JOSM with Java 25 and preview features enabled.
+
+Install GeoParquet first because Overture Maps declares it as a required plugin.
+The community workspace also provides an automated isolated-bundle installer.
+
 ## Build and run
 
 ```bash
