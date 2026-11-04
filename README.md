@@ -39,7 +39,16 @@ Both plugins are available without authentication from their public release page
 3. Enable both plugins and start JOSM with Java 25 and preview features enabled.
 
 Install GeoParquet first because Overture Maps declares it as a required plugin.
-The community workspace also provides an automated isolated-bundle installer.
+For the recommended self-contained setup, run the installer included in this
+repository. It downloads JOSM and both plugins, verifies their release checksums,
+and uses an isolated profile:
+
+```bash
+JAVA_HOME=/path/to/jdk-25 ./scripts/install-and-run.sh
+```
+
+See [Installation](docs/INSTALLATION.md) or
+[Instalación en español](docs/INSTALLATION.es.md).
 
 ## Build and run
 
@@ -61,6 +70,7 @@ remains available as a fallback.
 ## Docs
 
 - [Product and functional specification](docs/PRODUCT_SPEC.md)
+- [Installation guide](docs/INSTALLATION.md)
 - [Architecture and integration contract](docs/ARCHITECTURE.md)
 - [Implementation roadmap and completed milestones](docs/IMPLEMENTATION_PLAN.md)
 - [Acceptance tests](docs/ACCEPTANCE_TESTS.md)
