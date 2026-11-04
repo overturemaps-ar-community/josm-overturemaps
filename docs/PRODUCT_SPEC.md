@@ -17,7 +17,7 @@ Enable JOSM users to discover and visually compare Overture Maps reference data 
 
 ## 3. Screens / user flow
 
-1. File > Discover Overture Maps GeoParquet... (temporary placement; final menu UX TBD).
+1. File > Discover Overture Maps GeoParquet...
 2. Discovery dialog: release selector; theme selector; type selector; BBOX source (current viewport/manual); max documents; preferred provider.
 3. Results table: Item ID, bbox, asset/provider, URI, status; deduplicate mirrored providers; show incomplete results warning.
 4. Action: **Load as reference layer** delegates to GeoParquet plugin. **Copy URL** fallback.

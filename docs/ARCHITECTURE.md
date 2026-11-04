@@ -29,7 +29,10 @@ Manifest: `Plugin-Class=...OvertureMapsPlugin`, `Plugin-Requires=geoparquet`. Bu
 5. Parse Item via kraftek STACParser after compatibility-normalizing unknown nested extension fields; use core `bbox` and `assets`.
 6. Intersect bbox in EPSG:4326, resolve asset URLs and emit results with completeness status.
 
-The smoke test established an intersecting `transportation/segment` Item `00008`, but only searched 99 Items, not the full collection. The current scaffold follows the same algorithm and is not yet performance-optimized.
+Live validation established an intersecting `transportation/segment` Item `00008`.
+With `maxDocs=150`, traversal completed after 129 documents and 128 Items. The
+implementation reports explicitly when a lower document limit produces incomplete
+results; catalog traversal remains bounded and is not intended as a bulk indexer.
 
 ## Integration contract
 
@@ -57,4 +60,9 @@ Validate remote URL schemes/hosts and redirect behavior; guard against SSRF if u
 
 ## Known kraftek compatibility limitation
 
-`ItemDeserializer` tries to parse unknown nested JSON as date text (notably `storage:schemes`, `aws.storage:refs`, `aws.alternate`, `azure.storage:refs`). The bootstrap makes a temporary parse-only copy that drops nested extension values. Future milestone: preserve structured extension fields via a minimal fork/patch or separate sidecar metadata, without duplicating the entire STAC parser.
+`ItemDeserializer` tries to parse unknown nested JSON as date text (notably
+`storage:schemes`, `aws.storage:refs`, `aws.alternate`, `azure.storage:refs`). The
+compatibility layer makes a temporary parse-only copy that drops those nested
+extension values while preserving the original response, asset URLs and core STAC
+fields. A future parser update can preserve the structured extension fields without
+duplicating the entire STAC parser.

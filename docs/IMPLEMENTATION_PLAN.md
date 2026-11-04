@@ -1,6 +1,6 @@
-# Implementation roadmap (Codex-ready)
+# Implementation roadmap and completed milestones
 
-## M0 — Bootstrap and reproducible build
+## M0 — Reproducible build
 
 - Run `make bootstrap`, `make test`, `make build`, `make inspect`, `make install`, `make run`.
 - Confirm plugin is recognized and File menu action opens the dialog; check `Plugin-Requires` behavior with/without GeoParquet installed.
@@ -50,6 +50,9 @@ tests and packaging validation are present.
 - Documentation and JOSM plugin packaging/distribution validation.
 - Definition of done: repeatable real-world comparison workflow, no OSM editing/upload.
 
-## First Codex prompt
+## Maintenance baseline
 
-> Read AGENTS.md and docs/*.md. Start only with M0. Run the build, correct any compilation or JOSM plugin manifest issues, validate the menu entry, and report exact commands/results. Do not implement GeoParquet reading or claim cross-plugin integration works yet.
+All milestones M0–M4 are complete. Future work should preserve the tested
+cross-plugin boundary, read-only behavior, bounded STAC traversal and explicit
+incomplete-result reporting. Run the build and deterministic test suite in both
+plugin repositories before publishing changes.

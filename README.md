@@ -1,23 +1,32 @@
-# josm-overturemaps — kickoff scaffold
+# JOSM Overture Maps
+
+[Versión en español](README.es.md)
 
 A standalone JOSM plugin for discovering Overture Maps GeoParquet files using its
 static STAC catalog and loading them as read-only reference layers through the
 separate GeoParquet plugin.
 
-## Validated baseline (2026-11-03)
+## Validated release
 
-The earlier independent smoke test successfully traversed the Overture release catalog and discovered `transportation/segment` Item `00008`, with AWS and Azure HTTPS `.zstd.parquet` assets intersecting Tandil bbox `-59.3,-37.5,-59.0,-37.2`. The run stopped at `maxDocs=100` with 29 pending documents. That discovery run predated the JOSM scaffold validation described below.
+The plugin has been validated against the live Overture release catalog using
+`transportation/segment` data intersecting Tandil bbox
+`-59.3,-37.5,-59.0,-37.2`. Complete discovery with a sufficient document limit,
+AWS/Azure mirror selection and GeoParquet reference-layer loading were exercised.
 
-Milestone M0 was subsequently completed with OpenJDK `25.0.4.1`, Maven `3.6.3`, and JOSM tested version `19613`. The unit tests and shaded JAR build passed, the manifest was inspected, and an isolated JOSM profile loaded both `geoparquet 0.2.0` and `overturemaps 0.1.0`. The File menu action and discovery dialog were verified in a virtual display. M1 through M4 are now implemented locally.
+Version `0.1.0` was built and exercised with OpenJDK `25.0.4.1` and JOSM tested
+`19613`. An isolated JOSM profile loaded `geoparquet 0.3.0` and
+`overturemaps 0.1.0`; catalog discovery, the results UI and cross-plugin loading are
+implemented and covered by deterministic tests.
 
 ## Dependencies
 
 - Java 25 (matches the existing GeoParquet plugin)
 - Maven, Git, curl, JOSM tested JAR
 - `com.kraftek:stac-client:1.0.0` installed locally from https://github.com/kraftek/stac
-- **JOSM GeoParquet plugin installed separately**: `geoparquet.jar` from the user's existing project. Plugin manifest declares `Plugin-Requires: geoparquet`.
+- **JOSM GeoParquet plugin installed separately**: a compatible `geoparquet.jar`.
+  The plugin manifest declares `Plugin-Requires: geoparquet`.
 
-## First steps
+## Build and run
 
 ```bash
 make bootstrap
@@ -38,9 +47,8 @@ remains available as a fallback.
 
 - [Product and functional specification](docs/PRODUCT_SPEC.md)
 - [Architecture and integration contract](docs/ARCHITECTURE.md)
-- [Implementation plan for Codex](docs/IMPLEMENTATION_PLAN.md)
+- [Implementation roadmap and completed milestones](docs/IMPLEMENTATION_PLAN.md)
 - [Acceptance tests](docs/ACCEPTANCE_TESTS.md)
-- [Agent instructions](AGENTS.md)
 
 ## Releases
 
@@ -50,6 +58,10 @@ and creates a GitHub Release containing `overturemaps-0.1.0.jar` plus its SHA-25
 
 ## Notes
 
-The original smoke test uses a compatibility normalization before kraftek Item parsing: unsupported nested STAC extension objects are stripped **only from a temporary parse copy**. This is a temporary limitation, tracked for a proper preservation strategy. Asset URLs and core STAC fields are preserved. Metadata requests require HTTPS, use bounded retries, reject documents larger than 5 MiB and are cached for the dialog session.
+Compatibility normalization before kraftek Item parsing strips unsupported nested
+STAC extension objects **only from a temporary parse copy**. Asset URLs, core STAC
+fields and the original response are preserved. Metadata requests require HTTPS,
+use bounded retries, reject documents larger than 5 MiB and are cached for the
+dialog session.
 
 `make run` uses the same JVM flags as the validated `josm-geoparquet` starter. Installation paths can vary by JOSM packaging and operating system; override `JOSM_PLUGINS_DIR` if needed.
