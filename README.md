@@ -6,6 +6,41 @@ A standalone JOSM plugin for discovering Overture Maps GeoParquet files using it
 static STAC catalog and loading them as read-only reference layers through the
 separate GeoParquet plugin.
 
+<p align="center">
+  <a href="docs/images/overture-osm-comparison.webp">
+    <img src="docs/images/overture-osm-comparison.webp" alt="Overture Maps reference data loaded in JOSM and compared with OpenStreetMap" width="100%">
+  </a>
+</p>
+
+<p align="center"><em>Overture Maps reference geometry loaded in JOSM alongside OpenStreetMap data.</em></p>
+
+## From catalog to reference layer
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <a href="docs/images/stac-discovery-results.webp">
+        <img src="docs/images/stac-discovery-results.webp" alt="Overture Maps STAC discovery results in JOSM">
+      </a>
+      <br>
+      <strong>1. Discover</strong><br>
+      Browse Overture releases, themes and types for the current JOSM viewport.
+    </td>
+    <td width="50%" valign="top">
+      <a href="docs/images/overture-reference-layer.webp">
+        <img src="docs/images/overture-reference-layer.webp" alt="Overture Maps GeoParquet content loaded as a JOSM reference layer">
+      </a>
+      <br>
+      <strong>2. Compare</strong><br>
+      Load selected GeoParquet assets as separate, read-only reference layers.
+    </td>
+  </tr>
+</table>
+
+The plugin keeps Overture and editable OSM data in distinct layers. It is designed
+for visual inspection and comparison—not conflation, conversion, or upload to
+OpenStreetMap.
+
 ## Validated release
 
 The plugin has been validated against the live Overture release catalog using
